@@ -6,23 +6,36 @@ using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
+using Valve.VR;
+
 public class CalibrationManager : MonoBehaviour
 {
+    public SteamVR_Action_Boolean CalibrationAction; // Choose grab pinch in inspector
+    private SteamVR_Input_Sources _inputSource = SteamVR_Input_Sources.Any;
+    
+    
     private const string CalibrationFile = "Calibration";
     private string CalibrationFilePath => Path.Combine(Application.dataPath, CalibrationFile);
     [ShowInInspector, ReadOnly] public bool Active { get; private set; }
 
+    public const int PointsNeeded = 8;
+    private int _currentPointCalibrating;
+    
     public List<Vector3> CalibrationPoints;
 
-    public bool CalibrationNeeded => CalibrationPoints == null || CalibrationPoints.Count == 0;
+    public bool CalibrationNeeded => CalibrationPoints == null || CalibrationPoints.Count != PointsNeeded;
     
     void Start()
     {
         CalibrationPoints = new List<Vector3>();
         LoadCalibration();
+
+        _currentPointCalibrating = -1;
         
         if (CalibrationNeeded && !Active)
             ToggleActive();
+        
+        CalibrationAction.AddOnChangeListener(OnCalibrationButtonTriggered, _inputSource);
     }
 
     void LoadCalibration()
@@ -62,11 +75,6 @@ public class CalibrationManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.C) && Input.GetKey(KeyCode.LeftShift))
             ToggleActive();
-        
-        if (CalibrationPoints == null || !CalibrationPoints.Any())
-        {
-            Debug.LogError("CalibrationNeeded");
-        }
 
         if (!Active) return;
             
@@ -78,11 +86,16 @@ public class CalibrationManager : MonoBehaviour
             return;
         
         Active = !Active;
+        
+        _currentPointCalibrating = -1;
 
         foreach (Transform child in transform)
         {
             child.gameObject.SetActive(Active);
         }
+        
+        if (!Active)
+            LoadCalibration();
     }
     
     void OnGUI()
@@ -99,7 +112,27 @@ public class CalibrationManager : MonoBehaviour
         }
         
         GUILayout.Space(20);
-        
-        
+
+        if (_currentPointCalibrating == -1)
+        {
+            GUILayout.Label("Press Trigger to calibrate");
+        }
+    }
+
+    private void OnCalibrationButtonTriggered(SteamVR_Action_Boolean fromaction, SteamVR_Input_Sources fromsource, bool newstate)
+    {
+        if (!Active) return;
+
+        if (_currentPointCalibrating == -1)
+        {
+            CalibrationPoints.Clear();
+            _currentPointCalibrating = 0;
+        }
+
+        if (fromaction.stateDown)
+        {
+            var device = fromaction.GetActiveDevice(_inputSource);
+            CalibrationPoints.Add(fromaction.trackedDeviceIndex);
+        }
     }
 }
