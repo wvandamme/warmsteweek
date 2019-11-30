@@ -16,7 +16,9 @@ public class AudioInstrument : MonoBehaviour
     
     private AudioClip _activeClip;
 
+#if ODIN_INSPECTOR
     [Button]
+#endif
     public void TriggerLoop(int index)
     {
         SoundManager.Instance.StartLoop(this, index);
