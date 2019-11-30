@@ -1,7 +1,5 @@
 using System;
 using System.Collections;
-using System.Linq;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 [Serializable]
@@ -16,9 +14,6 @@ public class AudioInstrument : MonoBehaviour
     
     private AudioClip _activeClip;
 
-#if ODIN_INSPECTOR
-    [Button]
-#endif
     public void TriggerLoop(int index)
     {
         SoundManager.Instance.StartLoop(this, index);
