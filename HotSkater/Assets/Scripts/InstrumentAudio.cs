@@ -1,11 +1,14 @@
+using System;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
 
-public struct InstrumentAudio
+public class InstrumentAudio
 {
     public AudioInstrument Instrument;
     public int LoopIndex;
+
+    public AudioSource Source { get; private set; }
 
     public void Start()
     {
@@ -17,8 +20,8 @@ public struct InstrumentAudio
         
         var go = new GameObject($"Loop {LoopIndex}");
         go.transform.SetParent(Instrument.transform);
-        var source = go.AddComponent<AudioSource>();
+        Source = go.AddComponent<AudioSource>();
         
-        Instrument.StartLoop(source, LoopIndex);
+        Instrument.StartLoop(Source, LoopIndex);
     }
 }

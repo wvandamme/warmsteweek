@@ -16,12 +16,18 @@ public class AudioInstrument : MonoBehaviour
     public SoundLoop[] Loops;
     
     private AudioClip _activeClip;
+
+    public delegate void AudioInstrumentEventHandler(AudioInstrument sender);
+    
+    public event AudioInstrumentEventHandler SwitchPhase; 
+    public static event AudioInstrumentEventHandler GlobalSwitchPhase; 
+    
 #if ODIN_INSPECTOR
     [Button]
 #endif
     public void TriggerLoop(int index)
     {
-        SoundManager.Instance.StartLoop(this, index);
+        SoundManager.Instance.EnqueueLoop(this, index);
     }
     
     public void StartLoop(AudioSource source, int index)
@@ -47,7 +53,15 @@ public class AudioInstrument : MonoBehaviour
             
             yield return new WaitForSeconds(_activeClip.length);
 
+            OnSwitchPhase();
+
             index = (index + 1) % loop.Audio.Length;
         }
+    }
+
+    private void OnSwitchPhase()
+    {
+        SwitchPhase?.Invoke(this);
+        GlobalSwitchPhase?.Invoke(this);
     }
 }
