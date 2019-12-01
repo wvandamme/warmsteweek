@@ -7,6 +7,8 @@ using UnityEngine;
 
 public class SoundManager : Singleton<SoundManager>
 {
+    public float SoundDampeningPercentage = .2f;
+    
     private List<InstrumentAudio> _activeLoops;
     private InstrumentAudio _masterAudio;
 
@@ -62,7 +64,7 @@ public class SoundManager : Singleton<SoundManager>
         
         // Dim existing loops
         foreach (var activeLoop in _activeLoops)
-            activeLoop.Source.volume *= .8f;
+            activeLoop.Source.volume *= 1 - SoundDampeningPercentage;
         
         // Start new loop
         var loop = _queuedLoops.Dequeue();

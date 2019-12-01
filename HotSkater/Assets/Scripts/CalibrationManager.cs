@@ -22,13 +22,17 @@ public class CalibrationManager : MonoBehaviour
     private const string CalibrationFile = "Calibration";
     private string CalibrationFilePath => Path.Combine(Application.dataPath, CalibrationFile);
     public Transform ReferencePoint;
+
+    public Transform CalibrationRoot;
     
     public SteamVR_Action_Boolean CalibrationAction; // Choose grab pinch in inspector
     private SteamVR_Input_Sources _inputSource = SteamVR_Input_Sources.Any;
 
     /// ===============================================================================================
     /// Calibration State
-    public CalibrationData CalibrationData;
+    [NonSerialized] public CalibrationData CalibrationData;
+
+    public bool DisableCalibrationWhenDone = true;
 
     public bool CalibrationNeeded => CalibrationData.Equals( default(CalibrationData) );
 
@@ -70,14 +74,16 @@ public class CalibrationManager : MonoBehaviour
         
         Debug.Log($"Saved Calibration: {json}");
 
-        Active = false;
+        if (DisableCalibrationWhenDone)
+            SetActive(false);
 
         ApplyCalibration();
     }
 
     void ApplyCalibration()
     {
-        
+        CalibrationRoot.position = -ReferencePoint.TransformPoint( CalibrationData.Position );
+        CalibrationRoot.forward = CalibrationData.Direction;
     }
 
     // Update is called once per frame
@@ -132,14 +138,22 @@ public class CalibrationManager : MonoBehaviour
     private void OnCalibrationButtonTriggered(SteamVR_Action_Boolean fromaction, SteamVR_Input_Sources fromsource, bool newstate)
     {
         if (!Active) return;
-        
+
+        // Reset root to calibrate
+        if (!_isCalibrating)
+        {
+            CalibrationRoot.position = Vector3.zero;
+            CalibrationRoot.rotation = Quaternion.identity;
+        }
+
         var source = fromaction.GetActiveDevice(fromsource);
         var device = SteamVR_Behaviour_Pose.GetPose(source);
-        var targetPos = device.transform.position;
+        // var targetPos = device.transform.position;
+        var targetPos = ReferencePoint.InverseTransformPoint( device.transform.position );
+        targetPos.y = 0;
 
         if (fromaction.stateDown)
         {
-            targetPos.y = ReferencePoint.position.y;
             CalibrationData.Position = targetPos;
             
             _isCalibrating = true;
@@ -147,8 +161,9 @@ public class CalibrationManager : MonoBehaviour
         else if (fromaction.stateUp)
         {
             var direction = targetPos - CalibrationData.Position;
-            direction.y = 0;
-            CalibrationData.Direction = direction.normalized;
+            direction.Normalize();
+
+            CalibrationData.Direction = direction;
             
             _isCalibrating = false;
             
@@ -158,7 +173,18 @@ public class CalibrationManager : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.DrawWireSphere(CalibrationData.Position, .1f);
-        Gizmos.DrawLine(CalibrationData.Position, CalibrationData.Position + CalibrationData.Direction);
+        var pos = CalibrationData.Position;
+        pos.y = .4f;
+        Gizmos.DrawWireSphere(pos, .1f);
+        Gizmos.DrawLine(pos, CalibrationData.Position + CalibrationData.Direction);
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!_isCalibrating) return;
+        
+        var pos = CalibrationData.Position;
+        pos.y = .4f;
+        Gizmos.DrawWireSphere(pos, .3f);
     }
 }

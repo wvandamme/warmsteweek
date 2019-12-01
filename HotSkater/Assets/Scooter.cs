@@ -14,6 +14,7 @@ public class Scooter : MonoBehaviour
     private Vector3 _targetPosition;
     private Vector3 _prevForward;
     private Vector3 _targetForward;
+    private Vector3 _up;
 
     public float MoveSpeed = 1f;
     public float RotationSpeed = 45f;
@@ -47,12 +48,20 @@ public class Scooter : MonoBehaviour
             if ((position - _prevPosition).magnitude > float.Epsilon * 50)
                 _targetForward = forward;
 
+            _up = hit.normal;
+
+            var angle = Vector3.Angle(_up, _targetForward);
+            var angleDiff = angle - 90f;
+            if (Mathf.Abs(angleDiff) > float.Epsilon)
+                _targetForward = Vector3.RotateTowards(_targetForward, _up, angleDiff * Mathf.Deg2Rad, 0f);
         }
 
         transform.position = Vector3.MoveTowards(transform.position, _targetPosition, Time.deltaTime * MoveSpeed);
         if (_targetForward.sqrMagnitude > 0)
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(_targetForward), Time.deltaTime * RotationSpeed);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(_targetForward, _up), Time.deltaTime * RotationSpeed);
 
+        // transform.up = _up;
+        
         _prevPosition = position;
         _prevForward = forward;
     }
