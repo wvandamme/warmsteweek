@@ -1,6 +1,8 @@
 ﻿//======= Copyright (c) Valve Corporation, All rights reserved. ===============
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.Events;
@@ -14,6 +16,8 @@ namespace Valve.VR
     /// </summary>
     public class SteamVR_Behaviour_Pose : MonoBehaviour
     {
+        public static List<SteamVR_Behaviour_Pose> ActivePoses = new List<SteamVR_Behaviour_Pose>();
+        
         public SteamVR_Action_Pose poseAction = SteamVR_Input.GetAction<SteamVR_Action_Pose>("Pose");
 
         [Tooltip("The device this action should apply to. Any if the action is not device specific.")]
@@ -68,7 +72,11 @@ namespace Valve.VR
 
         protected SteamVR_HistoryBuffer historyBuffer = new SteamVR_HistoryBuffer(30);
 
-
+        public static SteamVR_Behaviour_Pose GetPose(SteamVR_Input_Sources source)
+        {
+            return ActivePoses.FirstOrDefault(x => x.inputSource == source);
+        }
+        
         protected virtual void Start()
         {
             if (poseAction == null)
@@ -85,6 +93,8 @@ namespace Valve.VR
 
         protected virtual void OnEnable()
         {
+            ActivePoses.Add(this);
+
             SteamVR.Initialize();
 
             if (poseAction != null)
@@ -98,6 +108,8 @@ namespace Valve.VR
 
         protected virtual void OnDisable()
         {
+            ActivePoses.Remove(this);
+            
             if (poseAction != null)
             {
                 poseAction[inputSource].onUpdate -= SteamVR_Behaviour_Pose_OnUpdate;

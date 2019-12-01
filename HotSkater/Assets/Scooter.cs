@@ -49,7 +49,8 @@ public class Scooter : MonoBehaviour
         }
 
         transform.position = Vector3.MoveTowards(transform.position, _targetPosition, Time.deltaTime * MoveSpeed);
-        transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(_targetForward), Time.deltaTime * RotationSpeed);
+        if (_targetForward.sqrMagnitude > 0)
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(_targetForward), Time.deltaTime * RotationSpeed);
 
         _prevPosition = position;
         _prevForward = forward;

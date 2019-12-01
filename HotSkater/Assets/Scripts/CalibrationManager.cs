@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
-
+using UnityEngine.UI;
 using Valve.VR;
 
 [Serializable]
@@ -41,9 +41,10 @@ public class CalibrationManager : MonoBehaviour
     void Start()
     {
         LoadCalibration();
-        
+
         if (CalibrationNeeded && !Active)
             ToggleActive();
+        else SetActive(false);
         
         CalibrationAction.AddOnChangeListener(OnCalibrationButtonTriggered, _inputSource);
     }
@@ -56,15 +57,27 @@ public class CalibrationManager : MonoBehaviour
 
         CalibrationData = JsonUtility.FromJson<CalibrationData>(json);
         
-        // TODO apply loaded data
+        Debug.Log($"Loaded Calibration: {json}");
+
+        ApplyCalibration();
     }
 
     void SaveCalibration()
     {
-        var lines = new List<string>();
         var json = JsonUtility.ToJson(CalibrationData);
         
         File.WriteAllText(CalibrationFilePath, json);
+        
+        Debug.Log($"Saved Calibration: {json}");
+
+        Active = false;
+
+        ApplyCalibration();
+    }
+
+    void ApplyCalibration()
+    {
+        
     }
 
     // Update is called once per frame
@@ -78,11 +91,16 @@ public class CalibrationManager : MonoBehaviour
     }
 
     private void ToggleActive()
-    {
+    { 
         if (CalibrationNeeded && Active)
             return;
         
-        Active = !Active;
+        SetActive(!Active);
+    }
+
+    private void SetActive(bool newState)
+    {
+        Active = newState;
         
         foreach (Transform child in transform)
         {
@@ -114,23 +132,33 @@ public class CalibrationManager : MonoBehaviour
     private void OnCalibrationButtonTriggered(SteamVR_Action_Boolean fromaction, SteamVR_Input_Sources fromsource, bool newstate)
     {
         if (!Active) return;
+        
+        var source = fromaction.GetActiveDevice(fromsource);
+        var device = SteamVR_Behaviour_Pose.GetPose(source);
+        var targetPos = device.transform.position;
 
         if (fromaction.stateDown)
         {
-            var device = fromaction.GetActiveDevice(_inputSource);
-
+            targetPos.y = ReferencePoint.position.y;
+            CalibrationData.Position = targetPos;
+            
             _isCalibrating = true;
-            
-            // SteamVR_Action_Pose.
-            
-            //SteamVR_Action_Boolean.
-            // var device = fromaction[_inputSource];
-            Debug.Log(device);
-            // CalibrationPoints.Add(fromaction.trackedDeviceIndex);
         }
         else if (fromaction.stateUp)
         {
+            var direction = targetPos - CalibrationData.Position;
+            direction.y = 0;
+            CalibrationData.Direction = direction.normalized;
+            
             _isCalibrating = false;
+            
+            SaveCalibration();
         }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.DrawWireSphere(CalibrationData.Position, .1f);
+        Gizmos.DrawLine(CalibrationData.Position, CalibrationData.Position + CalibrationData.Direction);
     }
 }

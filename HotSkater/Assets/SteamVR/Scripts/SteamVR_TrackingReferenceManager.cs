@@ -6,16 +6,23 @@ namespace Valve.VR
 {
     public class SteamVR_TrackingReferenceManager : MonoBehaviour
     {
+        private static SteamVR_TrackingReferenceManager instance;
         private Dictionary<uint, TrackingReferenceObject> trackingReferences = new Dictionary<uint, TrackingReferenceObject>();
 
         private void OnEnable()
         {
+            instance = this;
             SteamVR_Events.NewPoses.AddListener(OnNewPoses);
         }
 
         private void OnDisable()
         {
             SteamVR_Events.NewPoses.RemoveListener(OnNewPoses);
+        }
+
+        public static GameObject GetDevice(uint id)
+        {
+            return instance.trackingReferences[id].gameObject;
         }
 
         private void OnNewPoses(TrackedDevicePose_t[] poses)
