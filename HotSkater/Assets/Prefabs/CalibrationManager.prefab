@@ -97,6 +97,7 @@ MonoBehaviour:
   CalibrationAction:
     actionPath: /actions/default/in/GrabPinch
     needsReinit: 0
+  ReferencePoint: {fileID: 2699794443277029947}
   CalibrationPoints: []
 --- !u!1 &2699794442338859712
 GameObject:

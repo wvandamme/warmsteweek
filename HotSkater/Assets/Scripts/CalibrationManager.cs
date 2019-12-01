@@ -8,29 +8,39 @@ using UnityEngine;
 
 using Valve.VR;
 
+[Serializable]
+public struct CalibrationData
+{
+    public Vector3 Position;
+    public Vector3 Direction;
+}
+
 public class CalibrationManager : MonoBehaviour
 {
-    public SteamVR_Action_Boolean CalibrationAction; // Choose grab pinch in inspector
-    private SteamVR_Input_Sources _inputSource = SteamVR_Input_Sources.Any;
-    
+    [ShowInInspector, ReadOnly] public bool Active { get; private set; }
     
     private const string CalibrationFile = "Calibration";
     private string CalibrationFilePath => Path.Combine(Application.dataPath, CalibrationFile);
-    [ShowInInspector, ReadOnly] public bool Active { get; private set; }
-
-    public const int PointsNeeded = 8;
-    private int _currentPointCalibrating;
+    public Transform ReferencePoint;
     
-    public List<Vector3> CalibrationPoints;
+    public SteamVR_Action_Boolean CalibrationAction; // Choose grab pinch in inspector
+    private SteamVR_Input_Sources _inputSource = SteamVR_Input_Sources.Any;
 
-    public bool CalibrationNeeded => CalibrationPoints == null || CalibrationPoints.Count != PointsNeeded;
+    /// ===============================================================================================
+    /// Calibration State
+    public CalibrationData CalibrationData;
+
+    public bool CalibrationNeeded => CalibrationData.Equals( default(CalibrationData) );
+
+    private bool _isCalibrating;
+    
+    /// ===============================================================================================
+    /// Methods
+    
     
     void Start()
     {
-        CalibrationPoints = new List<Vector3>();
         LoadCalibration();
-
-        _currentPointCalibrating = -1;
         
         if (CalibrationNeeded && !Active)
             ToggleActive();
@@ -42,32 +52,19 @@ public class CalibrationManager : MonoBehaviour
     {
         if (!File.Exists(CalibrationFilePath)) return;
         
-        var pointLines = File.ReadAllLines(CalibrationFilePath);
-        foreach (var line in pointLines)
-        {
-            var numsStr = line.Split(new[] { ';' });
-            if (numsStr.Length != 3)
-            {
-                Debug.LogError($"Invalid Point: '{line}'");
-                continue;
-            }
+        var json = File.ReadAllText(CalibrationFilePath);
 
-            var nums = numsStr.Select( float.Parse ).ToArray();
-            var vec = new Vector3(nums[0], nums[1], nums[2]);
-            CalibrationPoints.Add(vec);
-        }
+        CalibrationData = JsonUtility.FromJson<CalibrationData>(json);
+        
+        // TODO apply loaded data
     }
 
     void SaveCalibration()
     {
         var lines = new List<string>();
-        foreach (var point in CalibrationPoints)
-        {
-            var text = $"{point.x};{point.y};{point.z}";
-            lines.Add(text);
-        }
+        var json = JsonUtility.ToJson(CalibrationData);
         
-        File.WriteAllLines(CalibrationFilePath, lines);
+        File.WriteAllText(CalibrationFilePath, json);
     }
 
     // Update is called once per frame
@@ -87,8 +84,6 @@ public class CalibrationManager : MonoBehaviour
         
         Active = !Active;
         
-        _currentPointCalibrating = -1;
-
         foreach (Transform child in transform)
         {
             child.gameObject.SetActive(Active);
@@ -101,7 +96,7 @@ public class CalibrationManager : MonoBehaviour
     void OnGUI()
     {
         if (!Active) return;
-
+        
         if (CalibrationNeeded)
         {
             var oldColor = GUI.color;
@@ -112,26 +107,19 @@ public class CalibrationManager : MonoBehaviour
         }
         
         GUILayout.Space(20);
-
-        if (_currentPointCalibrating == -1)
-        {
-            GUILayout.Label("Press Trigger to calibrate");
-        }
+        
+        GUILayout.Label("Press Trigger on circle at instruments to calibrate");
     }
 
     private void OnCalibrationButtonTriggered(SteamVR_Action_Boolean fromaction, SteamVR_Input_Sources fromsource, bool newstate)
     {
         if (!Active) return;
 
-        if (_currentPointCalibrating == -1)
-        {
-            CalibrationPoints.Clear();
-            _currentPointCalibrating = 0;
-        }
-
         if (fromaction.stateDown)
         {
             var device = fromaction.GetActiveDevice(_inputSource);
+
+            _isCalibrating = true;
             
             // SteamVR_Action_Pose.
             
@@ -139,6 +127,10 @@ public class CalibrationManager : MonoBehaviour
             // var device = fromaction[_inputSource];
             Debug.Log(device);
             // CalibrationPoints.Add(fromaction.trackedDeviceIndex);
+        }
+        else if (fromaction.stateUp)
+        {
+            _isCalibrating = false;
         }
     }
 }
