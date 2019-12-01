@@ -97,6 +97,8 @@ public class NoteAnimatorControl : MonoBehaviour {
 			transform.forward = axisInput;
 		}
 		chrAnimator.SetFloat("Speed", (axisInputMag + runParam));
+
+		if (chrController == null) return;
 		
 		// Jump
 		// while in jump, I am using Character Controller instead Root Motion, to move the Character.

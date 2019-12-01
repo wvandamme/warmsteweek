@@ -132,7 +132,13 @@ public class CalibrationManager : MonoBehaviour
         if (fromaction.stateDown)
         {
             var device = fromaction.GetActiveDevice(_inputSource);
-            CalibrationPoints.Add(fromaction.trackedDeviceIndex);
+            
+            // SteamVR_Action_Pose.
+            
+            //SteamVR_Action_Boolean.
+            // var device = fromaction[_inputSource];
+            Debug.Log(device);
+            // CalibrationPoints.Add(fromaction.trackedDeviceIndex);
         }
     }
 }
