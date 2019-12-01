@@ -7,8 +7,6 @@ using UnityEngine;
 
 public class SoundManager : Singleton<SoundManager>
 {
-    public AudioInstrument[] Instruments;
-
     private List<InstrumentAudio> _activeLoops;
     private InstrumentAudio _masterAudio;
 

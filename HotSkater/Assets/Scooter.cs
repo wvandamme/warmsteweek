@@ -5,6 +5,8 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class Scooter : MonoBehaviour
 {
+    public LayerMask RaycastMask;
+    
     public bool ExecuteInEditMode = true;
     public Transform FollowObject;
 
@@ -37,10 +39,9 @@ public class Scooter : MonoBehaviour
         position.y = 3f;
         var forward = (position - _prevPosition).normalized;
 
-        var layerMask = LayerMask.GetMask("Ramp");
         var dir = -Vector3.up;
         var ray = new Ray(position, dir);
-        if (Physics.Raycast(ray, out RaycastHit hit, layerMask))
+        if (Physics.Raycast(ray, out RaycastHit hit, float.MaxValue, RaycastMask))
         {
             _targetPosition = hit.point;
             if ((position - _prevPosition).magnitude > float.Epsilon * 50)
