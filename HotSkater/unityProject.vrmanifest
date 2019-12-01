@@ -5,7 +5,7 @@
       "app_key": "application.generated.unity.hotskater.exe",
       "launch_type": "url",
       "url": "steam://launch/",
-      "action_manifest_path": "C:\\Users\\wimva\\Develop\\warmsteweek\\HotSkater\\Assets\\StreamingAssets\\SteamVR\\actions.json",
+      "action_manifest_path": "D:\\Dev\\10_Projects\\02_Tests\\warmsteweek\\HotSkater\\Assets\\StreamingAssets\\SteamVR\\actions.json",
       "strings": {
         "en_us": {
           "name": "HotSkater [Testing]"
